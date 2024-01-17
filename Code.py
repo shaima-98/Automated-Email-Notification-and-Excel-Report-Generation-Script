@@ -8,6 +8,7 @@ from email.mime.base import MIMEBase
 import os
 import openpyxl
 from openpyxl.styles import Alignment
+from concurrent.futures import ThreadPoolExecutor
 
 # Csv file downloaded from PowerBi
 pbi_csv = r"Path to csv"
@@ -75,28 +76,37 @@ for sales_email_id, data in sales_email_id_dict.items():
             cell.alignment = openpyxl.styles.Alignment(wrap_text = True)
     workbook.save(output_file)
 
-#send out the mails 
-server = smtplib.SMTP("smtp.gmail.com", 587)
-server.starttls()
-sender_mail= "****"
-password= "****"
-server.login(sender_mail, password)
-for email_id in sales_email_id_list:
-    poc_excel=(str(email_id)).split('@')[0]
+def send_email(email_id):
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    sender_mail= "abc@xyz.com"
+    password= "aab hbn ssgh"
+    server.login(sender_mail, password)
+    poc_excel = str(email_id).split('@')[0]
+
     msg = MIMEMultipart()
-    msg["From"] = f"XYZ <{sender_mail}>"
+    msg["From"] = f"Abc <{sender_mail}>"
     msg["To"] = str(email_id)
-    msg["Subject"] = "Balance is running low!"
-    msg["Cc"] = "abc@gmail.com, xyz@gmail.com, ghj@gmail.com"
-    body = f"Hi {poc_excel},\nPlease reach out to the client"
+    msg["Subject"] = "Wallet balance is running low!"
+    msg["Cc"] = "sam@xyz.com, tim@xyz.com, sam.a@xyz.com"
+
+    body = f"Hi {poc_excel},\nPlease reach out to the client and get the recharge done ASAP, so that their redemptions are not stopped.\nRegards,\nSales Ops Team"
     msg.attach(MIMEText(body, "plain"))
+
+    attachment_file = f"C:\\Users\\shaim\\Downloads\\{poc_excel}.xlsx"
     company_sheet = MIMEBase('application', 'octet-stream')     
-    attachment_file= f"Path to the folder where the individual excel sheets are generated\\{poc_excel}.xlsx"
     company_sheet.set_payload(open(attachment_file, 'rb').read())
     email.encoders.encode_base64(company_sheet)
     company_sheet.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attachment_file)}"')
     msg.attach(company_sheet)
-    server.sendmail(sender_mail, [str(email_id), 'abc@gmail.com', 'xyz@gmail.com', 'ghj@gmail.com'], msg.as_string())
-server.quit()
+
+    server.sendmail(sender_mail, [str(email_id), 'sam@xyz.com', 'tim@xyz.com', 'sam.a@xyz.com'], msg.as_string())
+    server.quit()
+
+if __name__ == "__main__":
+    
+    with ThreadPoolExecutor(max_workers=len(sales_email_id_list)) as executor:
+        executor.map(send_email, sales_email_id_list)
+
 
 
